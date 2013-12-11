@@ -32,6 +32,19 @@ describe "rest", ->
           expect(post.errors.title).to.eq('title is too short')
           expect(adapter.h).to.eql(['PUT:/posts/1'])
 
+    it 'recognizes "base" errors', ->
+      adapter.r['PUT:/posts/1'] = ->
+        throw status: 422, responseText: JSON.stringify(errors: {base: 'post is unacceptable as a whole'})
+
+      session.merge @Post.create(id: "1", title: 'test')
+      session.load('post', 1).then (post) ->
+        post.title = 'dirty'
+        session.flush().then null, ->
+          expect(post.hasErrors).to.be.true
+          expect(post.errors.base).to.eq('post is unacceptable as a whole')
+          expect(adapter.h).to.eql(['PUT:/posts/1'])
+
+
 
     it 'handles error on create', ->
       adapter.r['POST:/posts'] = ->
